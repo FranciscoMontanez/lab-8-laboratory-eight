@@ -7,17 +7,43 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
     public int minimumPairwiseDistance(int[] values) {
         // throw new UnsupportedOperationException();
         this.values = values;
-        return 0;
+
+        // instances for each class
+        lowerLeft LL = new lowerLeft(values, globalMin);
+        bottomRight BR = new bottomRight(values, globalMin);
+        topRight TR = new topRight(values, globalMin);
+        center C = new center(values, globalMin);
+
+        // thread for each section
+        Thread ll = new Thread(LL);
+        ll.start();
+        Thread br = new Thread(BR);
+        br.start();
+        Thread tr = new Thread(TR);
+        tr.start();
+        Thread c = new Thread(C);
+        c.start();
+
+        // Wait for threads to finish
+        try{
+            ll.join();
+            br.join();
+            tr.join();
+            c.join();
+        }
+        catch (InterruptedException exception) {
+            System.out.println(exception);
+        }
+        // updates the global minimum
+        // The global minimum returned is the minimum from all 4 threads
+        return globalMin;
     }
 
-    // int array
     private int[] values;
-    //
+
     private int globalMin = Integer.MAX_VALUE;
 
-    // inner class
     public class lowerLeft implements Runnable {
-
         private int[] values;
         private int globalMin;
 
@@ -26,14 +52,22 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
             this.globalMin = globalMin;
         }
 
-        public void run() {
+        public void run(){
+            int result = Integer.MAX_VALUE;
 
+            for (int i = 0; i < (values.length / 2); i++) {
+                for (int j = 0; j < i; j++) {
+                    int relative = Math.abs(values[i] - values[j]);
+                    if (relative < result) {
+                        result = relative;
+                    }
+                }
+            }
+            updateGlobalResult(result);
         }
     }
 
-    // inner class
     public class bottomRight implements Runnable {
-
         private int[] values;
         private int globalMin;
 
@@ -43,11 +77,19 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
         }
 
         public void run() {
-
+            int result = Integer.MAX_VALUE;
+            for (int i = (values.length / 2); i < (values.length); i++) {
+                for (int j = 0; j < i - (values.length / 2); j++) {
+                    int relative = Math.abs(values[i] - values[j]);
+                    if (relative < result) {
+                        result = relative;
+                    }
+                }
+            }
+            updateGlobalResult(result);
         }
     }
 
-    // inner class
     public class topRight implements Runnable {
 
         private int[] values;
@@ -59,13 +101,20 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
         }
 
         public void run() {
-
+            int result = Integer.MAX_VALUE;
+            for (int i = (values.length / 2); i < values.length; i++) {
+                for (int j = (values.length / 2); j < i; j++) {
+                    int relative = Math.abs(values[i] - values[j]);
+                    if (relative < result) {
+                        result = relative;
+                    }
+                }
+            }
+            updateGlobalResult(result);
         }
     }
 
-    // inner class
     public class center implements Runnable {
-
         private int[] values;
         private int globalMin;
 
@@ -75,8 +124,22 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
         }
 
         public void run() {
-
+            int result = Integer.MAX_VALUE;
+            for (int i = values.length / 2; i < (values.length); i++) {
+                for (int j = i - (values.length / 2); j < (values.length / 2); j++) {
+                    int relative = Math.abs(values[i] - values[j]);
+                    if (relative < result) {
+                        result = relative;
+                    }
+                }
+            }
+            updateGlobalResult(result);
         }
     }
 
+    public synchronized void updateGlobalResult(int localResult) {
+        if (localResult < globalMin){
+            globalMin = localResult;
+        }
+    }
 }
